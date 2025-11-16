@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>數學配對與連連看遊戲</title>
+<style>
+  body {
+    font-family: "Comic Sans MS", cursive;
+    text-align: center;
+    background: linear-gradient(to right, #ffecd2, #fcb69f);
+    margin: 0;
+    padding: 0;
+  }
+
+  h1 {
+    color: #ff6b6b;
+    font-size: 2em;
+  }
+
+  .container {
+    margin-top: 50px;
+  }
+
+  .button {
+    background-color: #4ecdc4;
+    border: none;
+    color: white;
+    padding: 15px 30px;
+    margin: 10px;
+    border-radius: 15px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .button:hover {
+    background-color: #45b7aa;
+    transform: scale(1.05);
+  }
+
+  #settings-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 28px;
+    cursor: pointer;
+  }
+
+  .hidden { display: none; }
+
+  #teacher-mode, #teacher-mode-link {
+    background: #fff;
+    padding: 20px;
+    border-radius: 15px;
+    width: 80%;
+    max-width: 500px;
+    margin: 50px auto;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  }
+
+  input {
+    margin: 5px;
+    padding: 5px;
+  }
+
+  .question-box {
+    font-size: 22px;
+    margin-top: 20px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  .option {
+    background: white;
+    border: 2px solid #4ecdc4;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 5px;
+    width: 200px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .option:hover {
+    background: #ffe66d;
+  }
+
+  #score, #scoreLink {
+    font-size: 20px;
+    margin-top: 15px;
+  }
+
+  .link-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 40px;
+  }
+
+  .link-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    width: 150px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 20px;
+    transition: 0.3s;
+  }
+
+  .link-card:hover {
+    background-color: #ffe66d;
+    transform: scale(1.1);
+  }
+
+  /* 結束動畫 */
+  #end-screen {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.95);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: 28px;
+    color: #ff6b6b;
+    animation: fadeIn 0.5s;
+  }
+
+  @keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+
+</style>
+</head>
+
+<body>
+  <h1>🎯 數學挑戰遊戲平台</h1>
+
+  <!-- 首頁 -->
+  <div id="home" class="container">
+    <button class="button" onclick="startMatchingGame()">開始配對遊戲</button>
+    <button class="button" onclick="startLinkGame()">開始連連看</button>
+    <div id="settings-icon" onclick="openTeacherSelect()">⚙️</div>
+  </div>
+
+  <!-- 教師模式選擇 -->
+  <div id="teacher-select" class="hidden">
+    <h2>選擇要編輯的題目類型</h2>
+    <button class="button" onclick="enterTeacherMode()">編輯配對遊戲題目</button>
+    <button class="button" onclick="enterTeacherModeLink()">編輯連連看題目</button>
+    <button class="button" onclick="backHome()">回首頁</button>
+  </div>
+
+  <!-- 教師模式：配對 -->
+  <div id="teacher-mode" class="hidden">
+    <h2>✏️ 題目編輯（配對遊戲）</h2>
+    <div id="edit-area"></div>
+    <button class="button" onclick="addMatchingQuestion()">➕ 新增題目</button>
+    <button class="button" onclick="saveMatchingQuestions()">💾 儲存題目</button>
+    <button class="button" onclick="backHome()">回首頁</button>
+  </div>
+
+  <!-- 教師模式：連連看 -->
+  <div id="teacher-mode-link" class="hidden">
+    <h2>✏️ 題目編輯（連連看遊戲）</h2>
+    <div id="link-edit-area"></div>
+    <button class="button" onclick="addLinkQuestion()">➕ 新增題目</button>
+    <button class="button" onclick="saveLinkQuestions()">💾 儲存題目</button>
+    <button class="button" onclick="backHome()">回首頁</button>
+  </div>
+
+  <!-- 配對遊戲 -->
+  <div id="match-game" class="hidden">
+    <h2 id="questionTitle">第 1 題</h2>
+    <div class="question-box" id="question"></div>
+    <div class="options" id="options"></div>
+    <p id="score">分數：0</p>
+  </div>
+
+  <!-- 連連看 -->
+  <div id="link-game" class="hidden">
+    <h2 id="questionCount">等值算式配對</h2>
+    <div class="link-container" id="link-container"></div>
+    <p id="scoreLink">分數：0</p>
+  </div>
+
+  <!-- 結束畫面 -->
+  <div id="end-screen" class="hidden">
+    <p id="final-message"></p>
+    <button class="button" onclick="restartGame()">重新開始</button>
+    <button class="button" onclick="backHome()">回首頁</button>
+  </div>
+
+<script>
+  let matchQuestions = [
+    { q: "2 + 3", options: ["5", "6", "4", "7"], answer: "5" },
+    { q: "7 - 2", options: ["3", "4", "5", "6"], answer: "5" }
+  ];
+
+  let linkPairs = [
+    ["2 + 3", "5"],
+    ["4 × 2", "8"]
+  ];
+
+  let score = 0, currentQ = 0, selected = null, currentGame = "";
+
+  function openTeacherSelect() {
+    showOnly("teacher-select");
+  }
+
+  function backHome() {
+    showOnly("home");
+  }
+
+  function showOnly(id) {
+    ["home","teacher-select","teacher-mode","teacher-mode-link","match-game","link-game","end-screen"]
+    .forEach(x => document.getElementById(x).classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+  }
+
+  // === 教師模式：配對 ===
+  function enterTeacherMode() {
+    showOnly("teacher-mode");
+    renderMatchingEditor();
+  }
+
+  function renderMatchingEditor() {
+    const area = document.getElementById("edit-area");
+    area.innerHTML = "";
+    matchQuestions.forEach((item, i) => {
+      area.innerHTML += `
+        <div>
+          <b>題 ${i + 1}</b><br>
+          題目：<input type="text" id="q${i}" value="${item.q}"><br>
+          選項(用逗號分隔)：<input type="text" id="opt${i}" value="${item.options.join(",")}"><br>
+          答案：<input type="text" id="ans${i}" value="${item.answer}"><br><br>
+        </div>
+      `;
+    });
+  }
+
+  function addMatchingQuestion() {
+    matchQuestions.push({ q: "", options: [""], answer: "" });
+    renderMatchingEditor();
+  }
+
+  function saveMatchingQuestions() {
+    const newList = [];
+    for (let i = 0; i < matchQuestions.length; i++) {
+      const q = document.getElementById(`q${i}`).value.trim();
+      const opt = document.getElementById(`opt${i}`).value.trim().split(",");
+      const ans = document.getElementById(`ans${i}`).value.trim();
+      if (q) newList.push({ q, options: opt, answer: ans });
+    }
+    matchQuestions = newList;
+    alert("✅ 配對題目已更新！");
+  }
+
+  // === 教師模式：連連看 ===
+  function enterTeacherModeLink() {
+    showOnly("teacher-mode-link");
+    renderLinkEditor();
+  }
+
+  function renderLinkEditor() {
+    const area = document.getElementById("link-edit-area");
+    area.innerHTML = "";
+    linkPairs.forEach((p, i) => {
+      area.innerHTML += `
+        <div>
+          <input type="text" id="lq${i}" value="${p[0]}"> =
+          <input type="text" id="la${i}" value="${p[1]}"><br>
+        </div>
+      `;
+    });
+  }
+
+  function addLinkQuestion() {
+    linkPairs.push(["", ""]);
+    renderLinkEditor();
+  }
+
+  function saveLinkQuestions() {
+    const newPairs = [];
+    for (let i = 0; i < linkPairs.length; i++) {
+      const q = document.getElementById(`lq${i}`).value.trim();
+      const a = document.getElementById(`la${i}`).value.trim();
+      if (q && a) newPairs.push([q, a]);
+    }
+    linkPairs = newPairs;
+    alert("✅ 連連看題目已更新！");
+  }
+
+  // === 配對遊戲 ===
+  function startMatchingGame() {
+    currentGame = "match";
+    showOnly("match-game");
+    score = 0;
+    currentQ = 0;
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    const q = matchQuestions[currentQ];
+    document.getElementById("questionTitle").innerText = `第 ${currentQ + 1} 題`;
+    document.getElementById("question").innerText = q.q;
+    const options = document.getElementById("options");
+    options.innerHTML = "";
+    q.options.forEach(opt => {
+      const btn = document.createElement("div");
+      btn.classList.add("option");
+      btn.innerText = opt;
+      btn.onclick = () => checkAnswer(opt);
+      options.appendChild(btn);
+    });
+    document.getElementById("score").innerText = "分數：" + score;
+  }
+
+  function checkAnswer(opt) {
+    const q = matchQuestions[currentQ];
+    if (opt === q.answer) score += 10; else score -= 5;
+    if (++currentQ < matchQuestions.length) loadQuestion();
+    else endGame();
+  }
+
+  // === 連連看 ===
+  function startLinkGame() {
+    currentGame = "link";
+    showOnly("link-game");
+    score = 0;
+    selected = null;
+    renderLinkCards();
+  }
+
+  function renderLinkCards() {
+    const container = document.getElementById("link-container");
+    container.innerHTML = "";
+    const items = [];
+    linkPairs.forEach((p, i) => {
+      items.push({ text: p[0], type: "q", id: i });
+      items.push({ text: p[1], type: "a", id: i });
+    });
+    items.sort(() => Math.random() - 0.5);
+    items.forEach(item => {
+      const card = document.createElement("div");
+      card.classList.add("link-card");
+      card.textContent = item.text;
+      card.dataset.type = item.type;
+      card.dataset.id = item.id;
+      card.onclick = () => handleSelect(card);
+      container.appendChild(card);
+    });
+  }
+
+  function handleSelect(card) {
+    if (!selected) {
+      selected = card;
+      card.style.backgroundColor = "#ffb6b9";
+    } else if (selected === card) {
+      selected.style.backgroundColor = "white";
+      selected = null;
+    } else {
+      if (selected.dataset.id === card.dataset.id && selected.dataset.type !== card.dataset.type) {
+        selected.style.visibility = "hidden";
+        card.style.visibility = "hidden";
+        score += 10;
+      } else {
+        score -= 5;
+      }
+      selected.style.backgroundColor = "white";
+      selected = null;
+      document.getElementById("scoreLink").innerText = "分數：" + score;
+      if ([...document.querySelectorAll(".link-card")].every(c => c.style.visibility === "hidden")) {
+        endGame();
+      }
+    }
+  }
+
+  // === 結束畫面 ===
+  function endGame() {
+    document.getElementById("final-message").innerText = `🎉 遊戲結束！總分：${score}`;
+    showOnly("end-screen");
+  }
+
+  function restartGame() {
+    if (currentGame === "match") startMatchingGame();
+    else if (currentGame === "link") startLinkGame();
+  }
+
+</script>
+</body>
+</html>
